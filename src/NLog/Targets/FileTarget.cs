@@ -109,7 +109,10 @@ namespace NLog.Targets
 
         private Timer autoClosingTimer;
 
+#if !SILVERLIGHT && !__IOS__ && !__ANDROID__
         private Thread appenderInvalidatorThread = null;
+        private EventWaitHandle stopAppenderInvalidatorThreadWaitHandle = new ManualResetEvent(false);
+#endif
 
         /// <summary>
         /// The number of initialised files at any one time.
@@ -716,29 +719,26 @@ namespace NLog.Targets
                             // avoid the file from being deleted. Therefore we must periodically close appenders for files that 
                             // were archived so that the file can be deleted.
 
-                            this.appenderInvalidatorThread = new Thread(new ThreadStart(() =>
+                            this.appenderInvalidatorThread = new Thread(() =>
                             {
                                 while (true)
                                 {
                                     try
                                     {
-                                        Thread.Sleep(200);
-                                    }
-                                    catch (ThreadAbortException ex)
-                                    {
-                                        //ThreadAbortException will be automatically re-thrown at the end of the try/catch/finally if ResetAbort isn't called.
-                                        Thread.ResetAbort();
-                                        InternalLogger.Trace(ex, "ThreadAbortException in Thread.Sleep");
+                                        if (this.stopAppenderInvalidatorThreadWaitHandle.WaitOne(200))
+                                            break;
+
+                                        lock (SyncRoot)
+                                        {
+                                            this.fileAppenderCache.InvalidateAppendersForInvalidFiles();
+                                        }
                                     }
                                     catch (Exception ex)
                                     {
-                                        InternalLogger.Warn(ex, "Exception in Thread.Sleep, most of the time not an issue.");
+                                        InternalLogger.Debug(ex, "Exception in FileTarget appender-invalidator thread.");
                                     }
-
-                                    lock (SyncRoot)
-                                        this.fileAppenderCache.InvalidateAppendersForInvalidFiles();
                                 }
-                            }));
+                            });
                             this.appenderInvalidatorThread.IsBackground = true;
                             this.appenderInvalidatorThread.Start();
                         }
@@ -748,12 +748,19 @@ namespace NLog.Targets
                 {
                     this.fileAppenderCache.ArchiveFilePatternToWatch = null;
 
-                    if (this.appenderInvalidatorThread != null)
-                    {
-                        this.appenderInvalidatorThread.Abort();
-                        this.appenderInvalidatorThread = null;
-                    }
+                    this.StopAppenderInvalidatorThread();
                 }
+            }
+#endif
+        }
+
+        private void StopAppenderInvalidatorThread()
+        {
+#if !SILVERLIGHT && !__IOS__ && !__ANDROID__
+            if (this.appenderInvalidatorThread != null)
+            {
+                this.stopAppenderInvalidatorThreadWaitHandle.Set();
+                this.appenderInvalidatorThread = null;
             }
 #endif
         }
@@ -916,11 +923,7 @@ namespace NLog.Targets
                 this.autoClosingTimer = null;
             }
 
-            if (this.appenderInvalidatorThread != null)
-            {
-                this.appenderInvalidatorThread.Abort();
-                this.appenderInvalidatorThread = null;
-            }
+            this.StopAppenderInvalidatorThread();
 
             this.fileAppenderCache.CloseAppenders();
         }
@@ -1247,7 +1250,7 @@ namespace NLog.Targets
             string archiveFolderPath = Path.GetDirectoryName(archiveFileName);
             if (!Directory.Exists(archiveFolderPath))
                 Directory.CreateDirectory(archiveFolderPath);
-            
+
             if (EnableArchiveFileCompression)
             {
                 InternalLogger.Info("Archiving {0} to compressed {1}", fileName, archiveFileName);
