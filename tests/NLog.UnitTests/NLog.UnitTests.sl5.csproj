@@ -132,6 +132,7 @@
     <Compile Include="Internal\EnumHelpersTests.cs" />
     <Compile Include="Internal\ExceptionHelperTests.cs" />
     <Compile Include="Internal\FileAppenders\FileAppenderCacheTests.cs" />
+    <Compile Include="Internal\FilePathLayoutTests.cs" />
     <Compile Include="Internal\NetworkSenders\TcpNetworkSenderTests.cs" />
     <Compile Include="Internal\NetworkSenders\UdpNetworkSenderTests.cs" />
     <Compile Include="Internal\StringHelpersTests.cs" />
@@ -180,6 +181,7 @@
     <Compile Include="LayoutRenderers\Wrappers\WrapLineTests.cs" />
     <Compile Include="LayoutRenderers\Wrappers\XmlEncodeTests.cs" />
     <Compile Include="Layouts\AllEventPropertiesTests.cs" />
+    <Compile Include="Layouts\CompoundLayoutTests.cs" />
     <Compile Include="Layouts\CsvLayoutTests.cs" />
     <Compile Include="Layouts\JsonLayoutTests.cs" />
     <Compile Include="Layouts\SimpleLayoutOutputTests.cs" />

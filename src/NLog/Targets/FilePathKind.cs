@@ -1,4 +1,4 @@
-// 
+﻿// 
 // Copyright (c) 2004-2016 Jaroslaw Kowalski <jaak@jkowalski.net>, Kim Christensen, Julian Verdurmen
 // 
 // All rights reserved.
@@ -31,62 +31,26 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-using NLog.Internal;
-
-namespace NLog.LayoutRenderers
+namespace NLog.Targets
 {
-    using System;
-    using System.Globalization;
-    using System.Text;
-    using NLog.Config;
-
     /// <summary>
-    /// Log event context data. See <see cref="LogEventInfo.Properties"/>.
+    /// Type of filepath
     /// </summary>
-    [LayoutRenderer("event-properties")]
-    public class EventPropertiesLayoutRenderer : LayoutRenderer
+    public enum FilePathKind : byte
     {
         /// <summary>
-        ///  Log event context data with default options.
+        /// Detect of relative or absolute
         /// </summary>
-        public EventPropertiesLayoutRenderer()
-        {
-            Culture = CultureInfo.InvariantCulture;
-        }
+        Unknown,
+        /// <summary>
+        /// Relative path
+        /// </summary>
+        Relative,
 
         /// <summary>
-        /// Gets or sets the name of the item.
+        /// Absolute path
         /// </summary>
-        /// <docgen category='Rendering Options' order='10' />
-        [RequiredParameter]
-        [DefaultParameter]
-        public string Item { get; set; }
-
-        /// <summary>
-        /// Format string for conversion from object to string.
-        /// </summary>
-        public string Format { get; set; }
-
-        /// <summary>
-        /// Gets or sets the culture used for rendering. 
-        /// </summary>
-        /// <docgen category='Rendering Options' order='10' />
-        public CultureInfo Culture { get; set; }
-
-        /// <summary>
-        /// Renders the specified log event context item and appends it to the specified <see cref="StringBuilder" />.
-        /// </summary>
-        /// <param name="builder">The <see cref="StringBuilder"/> to append the rendered data to.</param>
-        /// <param name="logEvent">Logging event.</param>
-        protected override void Append(StringBuilder builder, LogEventInfo logEvent)
-        {
-            object value;
-
-            if (logEvent.Properties.TryGetValue(this.Item, out value))
-            {
-                var formatProvider = GetFormatProvider(logEvent, Culture);
-                builder.Append(value.ToStringWithOptionalFormat(Format, formatProvider));
-            }
-        }
+        /// <remarks>Best for performance</remarks>
+        Absolute
     }
 }

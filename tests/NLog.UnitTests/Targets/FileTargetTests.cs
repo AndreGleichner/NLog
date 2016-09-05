@@ -46,6 +46,7 @@ namespace NLog.UnitTests.Targets
 
     using Mocks;
     using NLog.Config;
+    using NLog.Internal;
     using NLog.Layouts;
     using NLog.Targets;
     using NLog.Targets.Wrappers;
@@ -142,6 +143,60 @@ namespace NLog.UnitTests.Targets
                 }
             }
         }
+
+#if !SILVERLIGHT && !MONO
+        const int FIVE_SECONDS = 5000;
+
+        /// <summary>
+        /// If a drive doesn't existing, before repeatatly creating a dir was tried. This test was taking +60 seconds 
+        /// </summary>
+        [Theory(Timeout = FIVE_SECONDS)]
+        [PropertyData("SimpleFileTest_TestParameters")]
+        public void NonExistingDriveShouldNotDelayMuch(bool concurrentWrites, bool keepFileOpen, bool networkWrites)
+        {
+            var nonExistingDrive = GetFirstNonExistingDriveWindows();
+
+            var logFile = nonExistingDrive + "://dont-extist/no-timeout.log";
+
+            try
+            {
+                var fileTarget = WrapFileTarget(new FileTarget
+                {
+                    FileName = logFile,
+                    Layout = "${level} ${message}",
+                    ConcurrentWrites = concurrentWrites,
+                    KeepFileOpen = keepFileOpen,
+                    NetworkWrites = networkWrites
+                });
+
+                SimpleConfigurator.ConfigureForTargetLogging(fileTarget, LogLevel.Debug);
+                for (int i = 0; i < 300; i++)
+                {
+                    logger.Debug("aaa");
+                }
+            }
+            finally
+            {
+                //should not be necessary
+                if (File.Exists(logFile))
+                    File.Delete(logFile);
+            }
+        }
+
+        /// <summary>
+        /// Get first drive letter of non-existing drive
+        /// </summary>
+        /// <returns></returns>
+        private static char GetFirstNonExistingDriveWindows()
+        {
+            var existingDrives = new HashSet<string>(Environment.GetLogicalDrives().Select(d => d[0].ToString()),
+                StringComparer.OrdinalIgnoreCase);
+            var nonExistingDrive =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToList().First(driveLetter => !existingDrives.Contains(driveLetter.ToString()));
+            return nonExistingDrive;
+        }
+
+#endif
 
         [Fact]
         public void CsvHeaderTest()
@@ -256,6 +311,25 @@ namespace NLog.UnitTests.Targets
             }
         }
 
+        /// <summary>
+        /// todo not needed to execute twice.
+        /// </summary>
+        [Fact]
+        public void DeleteFileOnStartTest_noExceptionWhenMissing()
+        {
+            LogManager.Configuration = this.CreateConfigurationFromString(@"<nlog throwExceptions='true'>
+    <targets>
+      <target name='file1' encoding='UTF-8' type='File'  deleteOldFileOnStartup='true' fileName='c://temp2/logs/i-dont-exist.log' layout='${message} ' />
+    </targets>
+    <rules>
+      <logger name='*' minlevel='Trace' writeTo='file1' />
+    </rules>
+</nlog>
+");
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Trace("running test");
+        }
+
 #if NET3_5 || NET4_0 || NET4_5
         public static IEnumerable<object[]> ArchiveFileOnStartTests_TestParameters
         {
@@ -363,8 +437,8 @@ namespace NLog.UnitTests.Targets
                 AssertFileContents(logFile, "Debug ddd\nInfo eee\nWarn fff\n", Encoding.UTF8);
                 Assert.True(File.Exists(archiveTempName));
 
-                var assertFileContents = ft.EnableArchiveFileCompression ? 
-                    new Action<string, string, Encoding>(AssertZipFileContents) : 
+                var assertFileContents = ft.EnableArchiveFileCompression ?
+                    new Action<string, string, Encoding>(AssertZipFileContents) :
                     AssertFileContents;
 
                 assertFileContents(archiveTempName, "Debug aaa\nInfo bbb\nWarn ccc\nDebug aaa\nInfo bbb\nWarn ccc\n",
@@ -2702,6 +2776,38 @@ namespace NLog.UnitTests.Targets
                 if (Directory.Exists(tempPath))
                     Directory.Delete(tempPath, true);
             }
+        }
+
+        [Fact]
+        public void TestFilenameCleanup()
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var invalidFileName = Path.DirectorySeparatorChar.ToString();
+            var expectedFileName = "";
+            for (int i = 0; i < invalidChars.Count(); i++)
+            {
+                var invalidChar = invalidChars[i];
+                if (invalidChar == Path.DirectorySeparatorChar || invalidChar == Path.AltDirectorySeparatorChar)
+                {
+                    //ignore, won't used in cleanup (but for find filename in path)
+                    continue;
+                }
+
+                invalidFileName += i + invalidChar.ToString();
+                //underscore is used for clean
+                expectedFileName += i + "_";
+            }
+            //under mono this the invalid chars is sometimes only 1 char (so min width 2)
+            Assert.True(invalidFileName.Length >= 2);
+            //CleanupFileName is default true;
+            var fileTarget = new FileTarget();
+            fileTarget.FileName = invalidFileName;
+
+            var filePathLayout = new FilePathLayout(invalidFileName, true, FilePathKind.Absolute);
+
+
+            var path = filePathLayout.Render(LogEventInfo.CreateNullEvent());
+            Assert.Equal(expectedFileName, path);
         }
 
 

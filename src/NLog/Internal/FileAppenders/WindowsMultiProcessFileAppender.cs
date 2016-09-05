@@ -219,10 +219,24 @@ namespace NLog.Internal.FileAppenders
         /// Gets the file info.
         /// </summary>
         /// <returns>The file characteristics, if the file information was retrieved successfully, otherwise null.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId = "System.Runtime.InteropServices.SafeHandle.DangerousGetHandle", Justification = "Optimization")]
-        public override FileCharacteristics GetFileCharacteristics()
+        private FileCharacteristics GetFileCharacteristics()
         {
             return FileCharacteristicsHelper.Helper.GetFileCharacteristics(FileName, file.DangerousGetHandle());
+        }
+
+        public override DateTime? GetFileCreationTimeUtc()
+        {
+            return GetFileCharacteristics()?.CreationTimeUtc;
+        }
+
+        public override DateTime? GetFileLastWriteTimeUtc()
+        {
+            return GetFileCharacteristics()?.LastWriteTimeUtc;
+        }
+
+        public override long? GetFileLength()
+        {
+            return GetFileCharacteristics()?.FileLength;
         }
 
         /// <summary>

@@ -14,8 +14,8 @@
     <FileAlignment>512</FileAlignment>
     <AndroidResgenFile>Resources\Resource.Designer.cs</AndroidResgenFile>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
-    <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v6.0</TargetFrameworkVersion>
+    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -149,6 +149,8 @@
     <Compile Include="Internal\FileAppenders\WindowsMultiProcessFileAppender.cs" />
     <Compile Include="Internal\FileCharacteristics.cs" />
     <Compile Include="Internal\FileCharacteristicsHelper.cs" />
+    <Compile Include="Internal\FileInfoExt.cs" />
+    <Compile Include="Internal\FilePathLayout.cs" />
     <Compile Include="Internal\FormatHelper.cs" />
     <Compile Include="Internal\IConfigurationManager.cs" />
     <Compile Include="Internal\IRenderable.cs" />
@@ -277,6 +279,7 @@
     <Compile Include="LayoutRenderers\Wrappers\WrapLineLayoutRendererWrapper.cs" />
     <Compile Include="LayoutRenderers\Wrappers\WrapperLayoutRendererBase.cs" />
     <Compile Include="LayoutRenderers\Wrappers\XmlEncodeLayoutRendererWrapper.cs" />
+    <Compile Include="Layouts\CompoundLayout.cs" />
     <Compile Include="Layouts\CsvColumn.cs" />
     <Compile Include="Layouts\CsvColumnDelimiterMode.cs" />
     <Compile Include="Layouts\CsvLayout.cs" />
@@ -352,6 +355,7 @@
     <Compile Include="Targets\EventLogTarget.cs" />
     <Compile Include="Targets\EventLogTargetOverflowAction.cs" />
     <Compile Include="Targets\FileArchivePeriod.cs" />
+    <Compile Include="Targets\FilePathKind.cs" />
     <Compile Include="Targets\FileTarget.cs" />
     <Compile Include="Targets\IFileCompressor.cs" />
     <Compile Include="Targets\LineEndingMode.cs" />
@@ -410,7 +414,9 @@
   <ItemGroup>
     <CodeAnalysisDictionary Include="CustomDictionary.xml" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ItemGroup>
     <None Include="Logger.tt">

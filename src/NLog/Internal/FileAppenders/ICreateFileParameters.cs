@@ -97,5 +97,10 @@ namespace NLog.Internal.FileAppenders
         /// </summary>
         bool PreferMutexLockedFileCreation { get; }
 #endif
+
+        /// <summary>
+        /// Should we capture the last write time of a file?
+        /// </summary>
+        bool CaptureLastWriteTime { get; }
     }
 }
